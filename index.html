@@ -1,92 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CredaCache Crypto Chart</title>
+    <title>График криптовалюты CredaCache</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
         }
-        canvas {
+        #chartContainer {
+            width: 80%;
             max-width: 800px;
-            margin: auto;
+            margin: 20px auto;
         }
     </style>
 </head>
 <body>
-    <h1>CredaCache Crypto Chart</h1>
-    <canvas id="cryptoChart"></canvas>
+    <h1>График криптовалюты CredaCache</h1>
+    <div id="chartContainer">
+        <canvas id="cryptoChart"></canvas>
+    </div>
 
     <script>
-        // URL API для получения данных
-        const API_URL = 'http://127.0.0.1:5000'; // Замените на ваш URL Flask-приложения
-
-        // Функция для обновления графика
-        async function updateChart() {
-            const response = await fetch(API_URL);
-            const data = await response.json();
-
-            // Извлечение данных для графика
-            const timestamps = data.map(item => new Date(item.timestamp).toLocaleString());
-            const netRates = data.map(item => item.NetRateRequired);
-
-            // Обновление графика
-            if (chart) {
-                chart.data.labels = timestamps;
-                chart.data.datasets[0].data = netRates;
-                chart.update();
-            } else {
-                createChart(timestamps, netRates);
+        // Функция для получения данных с сервера
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/data'); // Замените на ваш API endpoint
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Ошибка при получении данных:', error);
+                return null;
             }
         }
 
-        // Функция для создания графика
-        function createChart(labels, data) {
-            const ctx = document.getElementById('cryptoChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'NetRateRequired',
-                        data: data,
-                        borderColor: 'blue',
-                        borderWidth: 2,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'NetRateRequired'
-                            }
+        // Функция для обновления графика
+        function updateChart(chart, newData) {
+            chart.data.labels = newData.labels;
+            chart.data.datasets[0].data = newData.values;
+            chart.update();
+        }
+
+        // Инициализация графика
+        const ctx = document.getElementById('cryptoChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], // Временные метки
+                datasets: [{
+                    label: 'NetRateRequired',
+                    data: [], // Данные
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Время'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'NetRateRequired'
                         }
                     }
                 }
-            });
+            }
+        });
+
+        // Функция для периодического обновления данных
+        async function updateData() {
+            const data = await fetchData();
+            if (data) {
+                const labels = data.map(entry => entry.timestamp);
+                const values = data.map(entry => entry.NetRateRequired);
+                updateChart(chart, { labels, values });
+            }
+            setTimeout(updateData, 10000); // Обновление каждые 10 секунд
         }
 
-        // Переменная для хранения графика
-        let chart;
-
-        // Первичное обновление графика
-        updateChart();
-
-        // Обновление графика каждые 10 секунд
-        setInterval(updateChart, 10000);
+        // Запуск обновления данных
+        updateData();
     </script>
 </body>
 </html>
