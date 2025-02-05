@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CredaCache Crypto Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        canvas {
+            max-width: 800px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>CredaCache Crypto Chart</h1>
+    <canvas id="cryptoChart"></canvas>
+
+    <script>
+        // URL API для получения данных
+        const API_URL = 'http://127.0.0.1:5000'; // Замените на ваш URL Flask-приложения
+
+        // Функция для обновления графика
+        async function updateChart() {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+
+            // Извлечение данных для графика
+            const timestamps = data.map(item => new Date(item.timestamp).toLocaleString());
+            const netRates = data.map(item => item.NetRateRequired);
+
+            // Обновление графика
+            if (chart) {
+                chart.data.labels = timestamps;
+                chart.data.datasets[0].data = netRates;
+                chart.update();
+            } else {
+                createChart(timestamps, netRates);
+            }
+        }
+
+        // Функция для создания графика
+        function createChart(labels, data) {
+            const ctx = document.getElementById('cryptoChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'NetRateRequired',
+                        data: data,
+                        borderColor: 'blue',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'NetRateRequired'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Переменная для хранения графика
+        let chart;
+
+        // Первичное обновление графика
+        updateChart();
+
+        // Обновление графика каждые 10 секунд
+        setInterval(updateChart, 10000);
+    </script>
+</body>
+</html>
