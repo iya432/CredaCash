@@ -29,13 +29,16 @@
     <div id="chartContainer">
         <canvas id="cryptoChart"></canvas>
     </div>
-
     <script>
         // Функция для получения данных с сервера
         async function fetchData() {
             try {
                 const response = await fetch('/api/data'); // Замените на ваш API endpoint
                 const data = await response.json();
+                
+                // Log the fetched data to check its structure
+                console.log("Fetched data:", data);
+
                 return data;
             } catch (error) {
                 console.error('Ошибка при получении данных:', error);
@@ -87,7 +90,7 @@
         // Функция для периодического обновления данных
         async function updateData() {
             const data = await fetchData();
-            if (data) {
+            if (data && data.length > 0) {
                 const labels = data.map(entry => entry.timestamp);
                 const values = data.map(entry => entry.NetRateRequired);
                 updateChart(chart, { labels, values });
